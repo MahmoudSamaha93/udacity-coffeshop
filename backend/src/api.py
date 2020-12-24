@@ -83,11 +83,13 @@ def get_drinks_detail(payload):
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+
+
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
 @cross_origin()
 def post_drinks(payload):
-    
+
     error = False
     try:
         # get new values
@@ -111,8 +113,6 @@ def post_drinks(payload):
         # on successful db insert
         return jsonify({"success": True, "drinks": long_drink})
 
-    
-
 
 '''
     PATCH /drinks/<id>
@@ -124,6 +124,8 @@ def post_drinks(payload):
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+
+
 @app.route('/drinks/<id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 @cross_origin()
@@ -139,7 +141,7 @@ def patch_drinks(payload, id):
             # update field values
             title = request_json['title']
             drink.title = title
-        
+
         if 'recipe' in request_json:
             # update field values
             recipe = json.dumps(request_json['recipe'])
@@ -152,11 +154,12 @@ def patch_drinks(payload, id):
         long_drink = drink.long()
     except:
         db.session.rollback()
-        abort(404) # it should respond with a 404 error if <id> is not found
+        abort(404)  # it should respond with a 404 error if <id> is not found
     finally:
         db.session.close()
 
     return jsonify({"success": success, "drinks": [long_drink]})
+
 
 '''
 @TODO implement endpoint
@@ -168,6 +171,8 @@ def patch_drinks(payload, id):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+
+
 @app.route('/drinks/<id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
 @cross_origin()
@@ -179,11 +184,12 @@ def delete_drinks(payload, id):
         success = True
     except:
         db.session.rollback()
-        abort(404) # it should respond with a 404 error if <id> is not found
+        abort(404)  # it should respond with a 404 error if <id> is not found
     finally:
         db.session.close()
 
     return jsonify({"success": success, "delete": id})
+
 
 # Error Handling
 '''
@@ -253,9 +259,29 @@ def internal_server_error(error):
 
 
 '''
-@TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+
+'''
+   #### I implement it at "auth.py" by catching exception ####
+
+    def requires_auth(permission=''):
+        def requires_auth_decorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                try:
+                    token = get_token_auth_header()
+                    payload = verify_decode_jwt(token)
+                    check_permissions(permission, payload)
+                except AuthError as ae:
+                    return json.dumps(ae.error), ae.status_code
+                return f(payload, *args, **kwargs)
+
+            return wrapper
+        return requires_auth_decorator
+
+'''
+
 # @app.errorhandler(401)
 # def bad_request(error):
 #     return jsonify({
